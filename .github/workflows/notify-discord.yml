@@ -17,6 +17,9 @@ jobs:
           URL: ${{ github.event.release.html_url }}
           BODY: ${{ github.event.release.body }}
         run: |
+          # The title links to the official page on the site when the notes mention it, else to the release.
+          PAGE=$(printf '%s' "$BODY" | grep -oE 'https://mods\.sarkaar\.me/games/[a-z0-9-]+/' | head -1)
+          [ -n "$PAGE" ] && URL="$PAGE"
           # Discord rejects embed descriptions over 4096 chars, so cut long notes.
           # allowed_mentions.parse=[] means @everyone / @role in a release body never pings anyone.
           jq -n --arg title "$TITLE" --arg url "$URL" --arg body "$BODY" \

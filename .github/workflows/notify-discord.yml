@@ -1,0 +1,24 @@
+# Put this file in the PUBLIC releases repo at .github/workflows/notify-discord.yml
+# Then add a repo secret DISCORD_WEBHOOK_URL (Discord: #new-releases > Edit Channel > Integrations > Webhooks).
+name: Notify Discord
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TITLE: ${{ github.event.release.name }}
+          URL: ${{ github.event.release.html_url }}
+          BODY: ${{ github.event.release.body }}
+        run: |
+          # Discord rejects embed descriptions over 4096 chars, so cut long notes.
+          # allowed_mentions.parse=[] means @everyone / @role in a release body never pings anyone.
+          jq -n --arg title "$TITLE" --arg url "$URL" --arg body "$BODY" \
+            '{allowed_mentions:{parse:[]},embeds:[{title:$title[0:250],url:$url,description:$body[0:3500],color:3066993}]}' \
+            | curl -sS --fail-with-body -H "Content-Type: application/json" -d @- "$WEBHOOK"
